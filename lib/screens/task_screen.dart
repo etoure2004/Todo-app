@@ -5,6 +5,9 @@ class AddTaskScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController titleController = TextEditingController();
+    final TextEditingController descController = TextEditingController();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Add Task')),
       body: Padding(
@@ -12,16 +15,31 @@ class AddTaskScreen extends StatelessWidget {
         child: Column(
           children: [
             TextField(
+              controller: titleController,
               decoration: const InputDecoration(labelText: 'Task Title'),
             ),
             const SizedBox(height: 12),
             TextField(
-              decoration: const InputDecoration(labelText: 'Description'),
+              controller: descController,
+              decoration: const InputDecoration(labelText: 'Task Description'),
+              maxLines: 2,
             ),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // Save later
+                final title = titleController.text.trim();
+                final description = descController.text.trim();
+
+                if (title.isNotEmpty) {
+                  Navigator.pop(context, {
+                    'title': title,
+                    'description': description,
+                  });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a task title')),
+                  );
+                }
               },
               child: const Text('Save Task'),
             ),
