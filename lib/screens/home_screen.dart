@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../widgets/task_tile.dart';
 
@@ -11,23 +13,59 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final List<Task> tasks = [];
+  static const _storageKey = 'tasks_v2'; // v2 because we now include description
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_storageKey);
+    if (raw == null || raw.isEmpty) return;
+
+    try {
+      final List decoded = jsonDecode(raw) as List;
+      final loaded = decoded
+          .map((e) => Task.fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      setState(() {
+        tasks
+          ..clear()
+          ..addAll(loaded);
+      });
+    } catch (_) {
+      
+    }
+  }
+
+  Future<void> _saveTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = tasks.map((t) => t.toMap()).toList();
+    await prefs.setString(_storageKey, jsonEncode(data));
+  }
 
   void addTask(String taskName, String description) {
     setState(() {
       tasks.add(Task(name: taskName, description: description));
     });
+    _saveTasks();
   }
 
   void toggleTask(int index) {
     setState(() {
       tasks[index].toggleDone();
     });
+    _saveTasks();
   }
 
   void deleteTask(int index) {
     setState(() {
       tasks.removeAt(index);
     });
+    _saveTasks();
   }
 
   @override
@@ -47,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: tasks.length,
               itemBuilder: (context, index) {
                 return Dismissible(
-                  key: Key(tasks[index].name + index.toString()),
+                  key: Key('${tasks[index].name}-$index'),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     color: Colors.red,
@@ -60,9 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     taskName: tasks[index].name,
                     taskDescription: tasks[index].description,
                     isDone: tasks[index].isDone,
-                    checkboxCallback: (value) {
-                      toggleTask(index);
-                    },
+                    checkboxCallback: (_) => toggleTask(index),
                   ),
                 );
               },

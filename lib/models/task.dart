@@ -1,16 +1,26 @@
 class Task {
-  final String name;
-  final String description;
+  String name;
+  String description; 
   bool isDone;
 
   Task({
     required this.name,
-    required this.description,
+    this.description = '', 
     this.isDone = false,
   });
 
-  void toggleDone() {
-    isDone = !isDone;
-  }
-}
+  void toggleDone() => isDone = !isDone;
 
+  // For local storage
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'description': description,
+        'isDone': isDone,
+      };
+
+  factory Task.fromMap(Map<String, dynamic> map) => Task(
+        name: map['name'] as String,
+        description: (map['description'] ?? '') as String,
+        isDone: (map['isDone'] ?? false) as bool,
+      );
+}
